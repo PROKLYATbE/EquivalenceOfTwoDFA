@@ -68,6 +68,7 @@ public class DFA {
                     queue.offer(new Pair<>(newClass2, symbol));
                 }
             }
+            System.out.println(partitions.toString());
         }
         return partitions;
     }
@@ -100,6 +101,10 @@ public class DFA {
         }
         public V getValue() {
             return value;
+        }
+        @Override
+        public String toString(){
+            return "{ " + key  + " " + value + " }";
         }
     }
 
