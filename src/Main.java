@@ -14,5 +14,8 @@ public class Main{
         else {
             System.out.println("Загруженные автоматы не эвивалентны");
         }
+
+        DFA newDFA = dfas.get(0).minimize();
+        System.out.printf(newDFA.toString());
     }
 }

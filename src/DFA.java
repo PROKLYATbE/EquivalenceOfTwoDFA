@@ -12,6 +12,130 @@ public class DFA {
         this.isTerminal = isTerminal;
     }
 
+    public Set<Set<Integer>> findEquivalenceClasses() {
+        Set<Set<Integer>> partitions = new HashSet<>();
+
+        // Начальное разбиение
+        Set<Integer> terminalStates = new HashSet<>();
+        Set<Integer> nonTerminalStates = new HashSet<>();
+
+        for (int state = 0; state < isTerminal.size(); state++) {
+            if (isTerminal.get(state)) {
+                terminalStates.add(state);
+            } else {
+                nonTerminalStates.add(state);
+            }
+        }
+
+        if (!terminalStates.isEmpty()) {
+            partitions.add(terminalStates);
+        }
+        if (!nonTerminalStates.isEmpty()) {
+            partitions.add(nonTerminalStates);
+        }
+
+        // Алфавит
+        Set<Character> alphabet = new HashSet<>();
+        for (HashMap<Character, Integer> map : transitions.values()) {
+            alphabet.addAll(map.keySet());
+        }
+
+        Queue<Pair<Set<Integer>, Character>> queue = new LinkedList<>();
+
+        // Заполнение очереди парами
+        for (Character c : alphabet) {
+            queue.offer(new Pair<>(terminalStates, c));
+            queue.offer(new Pair<>(nonTerminalStates, c));
+        }
+
+        while (!queue.isEmpty()) {
+            Pair<Set<Integer>, Character> pair = queue.poll();
+            Set<Integer> currentClass = pair.getKey();
+            char symbol = pair.getValue();
+
+            for (Set<Integer> partition : new HashSet<>(partitions)) {
+                Pair<Set<Integer>, Set<Integer>> splitResult = split(partition, currentClass, symbol);
+                Set<Integer> newClass1 = splitResult.getKey();
+                Set<Integer> newClass2 = splitResult.getValue();
+
+                if (!newClass1.isEmpty() && !newClass2.isEmpty()) {
+                    partitions.remove(partition);
+                    partitions.add(newClass1);
+                    partitions.add(newClass2);
+
+                    // Добавление новых пар в очередь
+                    queue.offer(new Pair<>(newClass1, symbol));
+                    queue.offer(new Pair<>(newClass2, symbol));
+                }
+            }
+        }
+        return partitions;
+    }
+
+    private Pair<Set<Integer>, Set<Integer>> split(Set<Integer> partition, Set<Integer> classToCheck, char symbol) {
+        Set<Integer> newClass1 = new HashSet<>();
+        Set<Integer> newClass2 = new HashSet<>();
+
+        for (Integer state : partition) {
+            Integer nextState = transitions.get(state).get(symbol);
+            if (classToCheck.contains(nextState)) {
+                newClass1.add(state);
+            } else {
+                newClass2.add(state);
+            }
+        }
+        return new Pair<>(newClass1, newClass2);
+    }
+
+    // Вспомогательный класс для хранения пар значений
+    public static class Pair<K, V> {
+        private K key;
+        private V value;
+        public Pair(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+        public K getKey() {
+            return key;
+        }
+        public V getValue() {
+            return value;
+        }
+    }
+
+    public DFA minimize() {
+        Set<Set<Integer>> equivalenceClasses = findEquivalenceClasses();
+        HashMap<Set<Integer>, Integer> classToStateId = new HashMap<>();
+        HashMap<Integer, HashMap<Character, Integer>> newTransitions = new HashMap<>();
+        ArrayList<Boolean> newIsTerminal = new ArrayList<>();
+
+        int newStateId = 0;
+
+        for (Set<Integer> equivalenceClass : equivalenceClasses) {
+            classToStateId.put(equivalenceClass, newStateId++);
+            boolean isTerminalState = equivalenceClass.stream().anyMatch(isTerminal::get);
+            newIsTerminal.add(isTerminalState);
+        }
+
+        for (Set<Integer> equivalenceClass : equivalenceClasses) {
+            int stateId = classToStateId.get(equivalenceClass);
+            HashMap<Character, Integer> stateTransitions = new HashMap<>();
+
+            for (Integer state : equivalenceClass) {
+                for (Character symbol : transitions.get(state).keySet()) {
+                    Integer nextState = transitions.get(state).get(symbol);
+                    for (Set<Integer> nextClass : equivalenceClasses) {
+                        if (nextClass.contains(nextState)) {
+                            stateTransitions.put(symbol, classToStateId.get(nextClass));
+                            break;
+                        }
+                    }
+                }
+            }
+            newTransitions.put(stateId, stateTransitions);
+        }
+        return new DFA(newTransitions, newIsTerminal);
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

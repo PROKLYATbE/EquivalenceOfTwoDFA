@@ -1,24 +1,26 @@
-# <- Символ комментария
-# Считается что 0 - начальное состояние
-# Переход имеет вид: <из какого состояния> '<символ>' <в какое состояние>
 # DFA 1
 transitions:
-0 '0' 0
-0 '1' 1
+0 '1' 0
+0 '0' 1
+0 '0' 2
 1 '0' 2
-1 '1' 0
+1 '1' 3
 2 '0' 1
-2 '1' 2
+2 '1' 3
+3 '0' 3
+3 '1' 0
 
-isTerminal: true, false, false
+
+
+isTerminal: false, false, false, true
 
 # DFA 2
 transitions:
-0 '0' 0
+0 '0' 2
 0 '1' 1
-2 '0' 1
+2 '0' 2
 2 '1' 2
-1 '0' 2
-1 '1' 0
+1 '0' 1
+1 '1' 1
 
-isTerminal: true, false, false
+isTerminal: false, true, true
